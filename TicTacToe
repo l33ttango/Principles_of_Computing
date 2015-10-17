@@ -1,0 +1,122 @@
+# http://www.codeskulptor.org/#user40_0PNhdI87gT_13.py
+"""
+Monte Carlo Tic-Tac-Toe Player
+"""
+
+import random
+import poc_ttt_gui
+import poc_ttt_provided as provided
+
+# Constants for Monte Carlo simulator
+# You may change the values of these constants as desired, but
+#  do not change their names.
+
+
+NTRIALS = 30         # Number of trials to run
+SCORE_CURRENT = 1.0 # Score for squares played by the current player
+SCORE_OTHER = 1.0   # Score for squares played by the other player
+    
+# Add your functions here.
+
+def mc_trial(board, player): 
+    """
+    This function takes a current board and the next player to move. 
+    The function should play a game starting with the given player by 
+    making random moves, alternating between players. The function 
+    should return when the game is over. The modified board will 
+    contain the state of the game, so the function does not return 
+    anything. In other words, the function should modify the board 
+    input.
+    """
+    current_player = player
+    possible_moves = board.get_empty_squares()
+    winner = board.check_win()
+        
+    while winner == None:        
+        possible_moves = board.get_empty_squares()
+        next_move = random.choice(possible_moves)
+        row, col = next_move
+        board.move(row, col, current_player)
+        current_player = provided.switch_player(current_player)    
+        winner = board.check_win()        
+    print board
+                         
+def mc_update_scores(scores, board, player): 
+    """
+    This function takes a grid of scores (a list of lists) with the
+    same dimensions as the Tic-Tac-Toe board, a board from a 
+    completed game, and which player the machine player is. The 
+    function should score the completed board and update the scores 
+    grid. As the function updates the scores grid directly, it does 
+    not return anything,
+    """
+    winner = board.check_win()
+    if winner == provided.DRAW:
+        return
+    elif winner == provided.PLAYERX:
+        x_value = 1
+        y_value = -1
+    else:
+        x_value = -1
+        y_value = 1
+         
+    for row in range(board.get_dim()):
+        for col in range(board.get_dim()):
+            player_square = board.square(row, col)
+            score_adjust = 0
+            if player_square == provided.PLAYERX:
+                score_adjust = x_value
+            elif player_square == provided.PLAYERO:
+                score_adjust = y_value
+            
+            scores[row][col] += score_adjust
+    print scores
+                    
+    
+def get_best_move(board, scores): 
+    """
+    This function takes a current board and a grid of scores. 
+    The function should find all of the empty squares with the
+    maximum score and randomly return one of them as a (row, column) 
+    tuple. It is an error to call this function with a board that has 
+    no empty square (there is no possible next move), so your 
+    function may do whatever it wants in that case. The case where
+    the board is full will not be tested.
+    """
+    potential_moves = board.get_empty_squares()
+    max_score = -1000
+    best_moves = []
+    for move in potential_moves:
+        row, col = move
+        if scores[row][col] > max_score:
+            max_score = scores[row][col]
+            best_moves = [move]
+        elif scores[row][col] == max_score:
+            best_moves.append(move)
+    return random.choice(best_moves)
+
+def mc_move(board, player, trials):
+    """
+    This function takes a current board, which player the machine
+    player is, and the number of trials to run. The function should 
+    use the Monte Carlo simulation described above to return a move 
+    for the machine player in the form of a (row, column) tuple. Be 
+    sure to use the other functions you have written!
+    """
+    
+    total_scores = [[0] * board.get_dim() for iii in range(board.get_dim())]
+    for iii in range(trials):
+        trial_board = board.clone()
+        mc_trial(trial_board, player)
+        mc_update_scores(total_scores, trial_board, player)
+    return get_best_move(board, total_scores)
+
+
+
+ 
+# Test game with the console or the GUI.  Uncomment whichever 
+# you prefer.  Both should be commented out when you submit 
+# for testing to save time.
+
+# provided.play_game(mc_move, NTRIALS, False)        
+#poc_ttt_gui.run_gui(3, provided.PLAYERX, mc_move, NTRIALS, False)
